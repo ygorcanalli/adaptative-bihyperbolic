@@ -21,7 +21,7 @@ from keras.layers import PReLU, ELU, LeakyReLU, ThresholdedReLU
 
 nb_classes = 10
 batch_size = 128
-nb_epoch = 5
+nb_epoch = 100
 dump_params = False
 
 def evaluate_model(model, dataset, name, n_layers, hals):
@@ -32,7 +32,7 @@ def evaluate_model(model, dataset, name, n_layers, hals):
     #tb = TensorBoard(log_dir='output/mnist_adaptative_%dx800' % n_layers, histogram_freq=1, write_graph=False, write_images=False)
 
     sgd = SGD(lr=0.01, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, callbacks=[es], metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
     if dump_params:
         for l in range(n_layers + 1):
@@ -45,7 +45,7 @@ def evaluate_model(model, dataset, name, n_layers, hals):
             np.savetxt("output/%dx800/tau1_%d_start.csv" % (n_layers, l), tau_1, delimiter=",")
             np.savetxt("output/%dx800/tau2_%d_start.csv" % (n_layers, l), tau_2, delimiter=",")
 
-    history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch, verbose=1, validation_split=1/6, callbacks=[csv_logger])
+    history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch, verbose=1, validation_split=1/6, callbacks=[csv_logger, es])
     score = model.evaluate(X_test, Y_test, verbose=1)
 
     if dump_params:
