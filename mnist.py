@@ -24,6 +24,7 @@ batch_size = 128
 nb_epoch = 100
 dump_params = False
 
+
 def evaluate_model(model, dataset, name, n_layers, hals):
     X_train, Y_train, X_test, Y_test = dataset
     csv_logger = CSVLogger('output/%dx800/%s.csv' % (n_layers, name))
@@ -32,7 +33,8 @@ def evaluate_model(model, dataset, name, n_layers, hals):
     #tb = TensorBoard(log_dir='output/mnist_adaptative_%dx800' % n_layers, histogram_freq=1, write_graph=False, write_images=False)
 
     sgd = SGD(lr=0.01, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=sgd, metrics=['accuracy'])
 
     if dump_params:
         for l in range(n_layers + 1):
@@ -41,11 +43,15 @@ def evaluate_model(model, dataset, name, n_layers, hals):
             tau_1 = HAL[1]
             tau_2 = HAL[2]
 
-            np.savetxt("output/%dx800/lambda_%d_start.csv" % (n_layers, l), lmbda, delimiter=",")
-            np.savetxt("output/%dx800/tau1_%d_start.csv" % (n_layers, l), tau_1, delimiter=",")
-            np.savetxt("output/%dx800/tau2_%d_start.csv" % (n_layers, l), tau_2, delimiter=",")
+            np.savetxt("output/%dx800/lambda_%d_start.csv" %
+                       (n_layers, l), lmbda, delimiter=",")
+            np.savetxt("output/%dx800/tau1_%d_start.csv" %
+                       (n_layers, l), tau_1, delimiter=",")
+            np.savetxt("output/%dx800/tau2_%d_start.csv" %
+                       (n_layers, l), tau_2, delimiter=",")
 
-    history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch, verbose=1, validation_split=1/6, callbacks=[csv_logger, es])
+    history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
+                        verbose=1, validation_split=1 / 6, callbacks=[csv_logger, es])
     score = model.evaluate(X_test, Y_test, verbose=1)
 
     if dump_params:
@@ -55,13 +61,17 @@ def evaluate_model(model, dataset, name, n_layers, hals):
             tau_1 = HAL[1]
             tau_2 = HAL[2]
 
-            np.savetxt("output/%dx800/lambda_%d_stop.csv" % (n_layers, l), lmbda, delimiter=",")
-            np.savetxt("output/%dx800/tau1_%d_stop.csv" % (n_layers, l), tau_1, delimiter=",")
-            np.savetxt("output/%dx800/tau2_%d_stop.csv" % (n_layers, l), tau_2, delimiter=",")
+            np.savetxt("output/%dx800/lambda_%d_stop.csv" %
+                       (n_layers, l), lmbda, delimiter=",")
+            np.savetxt("output/%dx800/tau1_%d_stop.csv" %
+                       (n_layers, l), tau_1, delimiter=",")
+            np.savetxt("output/%dx800/tau2_%d_stop.csv" %
+                       (n_layers, l), tau_2, delimiter=",")
 
     epochs = len(history.epoch)
 
     return score[0], score[1], epochs
+
 
 def load_dataset():
     # the data, shuffled and split between train and test sets
@@ -82,6 +92,7 @@ def load_dataset():
 
     return X_train, Y_train, X_test, Y_test
 
+
 def create_layer(name):
     if name == 'abh':
         return AdaptativeBiHyperbolic()
@@ -98,16 +109,17 @@ def create_layer(name):
     elif name == 'tanh':
         return Activation('tanh')
 
+
 def __main__(argv):
     n_layers = int(argv[0])
-    print(n_layers,'layers')
+    print(n_layers, 'layers')
 
     dataset = load_dataset()
 
     nonlinearities = ['abh', 'prelu', 'lrelu', 'trelu', 'elu', 'relu', 'tanh']
 
     with open("output/%dx800/compare.csv" % n_layers, "a") as fp:
-            fp.write("fn,test_loss,test_acc,epochs\n")
+        fp.write("fn,test_loss,test_acc,epochs\n")
 
     hals = []
 
@@ -127,13 +139,14 @@ def __main__(argv):
         model.add(Activation('softmax'))
         model.summary()
 
-        loss, acc, epochs = evaluate_model(model, dataset, name, n_layers, hals)
+        loss, acc, epochs = evaluate_model(
+            model, dataset, name, n_layers, hals)
 
         with open("output/%dx800/compare.csv" % n_layers, "a") as fp:
-            fp.write("%s,%f,%f,%d\n" % (name, loss, 100*acc, epochs))
+            fp.write("%s,%f,%f,%d\n" % (name, loss, 100 * acc, epochs))
 
         model = None
 
-if __name__ == "__main__":
-   __main__(sys.argv[1:])# -*- coding: utf-8 -*-
 
+if __name__ == "__main__":
+    __main__(sys.argv[1:])  # -*- coding: utf-8 -*-

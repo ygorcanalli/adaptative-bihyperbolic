@@ -9,10 +9,14 @@ from sklearn.ensemble import RandomForestClassifier
 
 # load data
 
-y_tr = pd.read_csv('tox21/tox21_labels_train.csv.gz', index_col=0, compression="gzip")
-y_te = pd.read_csv('tox21/tox21_labels_test.csv.gz', index_col=0, compression="gzip")
-x_tr_dense = pd.read_csv('tox21/tox21_dense_train.csv.gz', index_col=0, compression="gzip").values
-x_te_dense = pd.read_csv('tox21/tox21_dense_test.csv.gz', index_col=0, compression="gzip").values
+y_tr = pd.read_csv('tox21/tox21_labels_train.csv.gz',
+                   index_col=0, compression="gzip")
+y_te = pd.read_csv('tox21/tox21_labels_test.csv.gz',
+                   index_col=0, compression="gzip")
+x_tr_dense = pd.read_csv('tox21/tox21_dense_train.csv.gz',
+                         index_col=0, compression="gzip").values
+x_te_dense = pd.read_csv('tox21/tox21_dense_test.csv.gz',
+                         index_col=0, compression="gzip").values
 x_tr_sparse = io.mmread('tox21/tox21_sparse_train.mtx.gz').tocsc()
 x_te_sparse = io.mmread('tox21/tox21_sparse_test.mtx.gz').tocsc()
 
