@@ -16,11 +16,6 @@ from custom import AdaptativeBiHyperbolic
 from keras.layers import PReLU, ELU, LeakyReLU,ThresholdedReLU, Dropout
 from keras import regularizers
 
-nb_classes = 10
-batch_size = 128
-nb_epoch = 100
-dump_params = False
-
 def create_activation_layer(name):
     if name == 'abh':
         return AdaptativeBiHyperbolic()
@@ -47,11 +42,11 @@ def get_model(activation_funtion, n_hidden_layers, hidden_size, lr, l2, dropout_
     model.add(Dropout(dropout_rate))
     for l in range(n_hidden_layers):
         model.add(Dense(hidden_size, kernel_regularizer=regularizers.l2(l2)))
-        activation_layer = create_layer(activation_funtion)
+        activation_layer = create_activation_layer(activation_funtion)
         model.add(activation_layer)
         activation_layers.append(activation_layer)
         model.add(Dropout(dropout_rate))
-    model.add(Dense(nb_classes))
+    model.add(Dense(2))
     model.add(Activation('softmax'))
     model.summary()
 
@@ -62,6 +57,7 @@ def get_model(activation_funtion, n_hidden_layers, hidden_size, lr, l2, dropout_
 
     return model
 
+#%%
 # load data
 
 y_tr = pd.read_csv('tox21/tox21_labels_train.csv.gz',
@@ -91,8 +87,8 @@ for target in y_tr.columns:
     model = get_model('relu', 6, 1024, 0.01, 0.001, 0.05)
 
     y_train = np_utils.to_categorical(y_tr[target][rows_tr], 2)
-    model.fit(x_tr[rows_tr], y_train, batch_size=128, nb_epoch=100, validation_split=1/10, verbose=1, callbacks=[es])
+    model.fit(x_tr[rows_tr], y_train, batch_size=128, epochs=100, validation_split=1/10, verbose=1, callbacks=[es])
 
-    p_te = rf.predict_proba(x_te[rows_te])
+    p_te = model.predict_proba(x_te[rows_te])
     auc_te = roc_auc_score(y_te[target][rows_te], p_te[:, 1])
     print("%15s: %3.5f" % (target, auc_te))
