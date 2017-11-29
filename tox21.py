@@ -2,6 +2,7 @@
 # pip install numpy scipy pandas scikit-learn
 import numpy as np
 import pandas as pd
+from pprint import pprint
 from scipy import io
 from sklearn.metrics import roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
@@ -79,16 +80,24 @@ x_te = np.hstack([x_te_dense, x_te_sparse[:, sparse_col_idx].A])
 x_te.shape
 #%%
 # Build a random forest model for all twelve assays
+
+aucs = []
 for target in y_tr.columns:
     es = EarlyStopping(monitor='val_loss', patience=5)
 
     rows_tr = np.isfinite(y_tr[target]).values
     rows_te = np.isfinite(y_te[target]).values
-    model = get_model('relu', 6, 1024, 0.01, 0.001, 0.05)
+    
+    model = get_model('abh', 6, 1024, 0.01, 0.001, 0.05)
 
     y_train = np_utils.to_categorical(y_tr[target][rows_tr], 2)
     model.fit(x_tr[rows_tr], y_train, batch_size=128, epochs=100, validation_split=1/10, verbose=1, callbacks=[es])
 
     p_te = model.predict_proba(x_te[rows_te])
     auc_te = roc_auc_score(y_te[target][rows_te], p_te[:, 1])
-    print("%15s: %3.5f" % (target, auc_te))
+    aucs.append(auc_te)
+
+print('mean:', np.mean(aucs))
+print('std:', np.std(aucs))
+#print("%15s: %3.5f" % (target, auc_te))
+pprint(aucs)

@@ -3,7 +3,7 @@ from keras.engine.topology import Layer
 from keras import initializers
 
 def biHyperbolic(x, lmbda, tau_1, tau_2):
-    return K.sqrt(lmbda**2 * (x + 1 / (2*lmbda))**2 + tau_1**2) - K.sqrt(lmbda**2 * (x - 1 / (2*lmbda))**2 + tau_2**2)
+    return K.sqrt(1/16*(4 * lmbda * x + 1)**2 + tau_1**2) - K.sqrt(1/16*(4 * lmbda * x - 1)**2 + tau_2**2)
         
 class AdaptativeBiHyperbolic(Layer):
     
