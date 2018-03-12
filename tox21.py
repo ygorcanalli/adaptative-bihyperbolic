@@ -7,15 +7,15 @@ from scipy import io
 from sklearn.metrics import roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
 
-
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import SGD
 from keras.utils import np_utils
-from keras.callbacks import CSVLogger, EarlyStopping
+from keras.callbacks import CSVLogger, EarlyStopping, TensorBoard
 from custom import AdaptativeBiHyperbolic
 from keras.layers import PReLU, ELU, LeakyReLU,ThresholdedReLU, Dropout
 from keras import regularizers
+
 
 def create_activation_layer(name):
     if name == 'abh':
@@ -84,14 +84,15 @@ x_te.shape
 aucs = []
 for target in y_tr.columns:
     es = EarlyStopping(monitor='val_loss', patience=5)
+    tb = TensorBoard(histogram_freq=1, write_graph=True, write_images=True, batch_size=128)
 
     rows_tr = np.isfinite(y_tr[target]).values
     rows_te = np.isfinite(y_te[target]).values
-    
+
     model = get_model('abh', 6, 1024, 0.01, 0.001, 0.05)
 
     y_train = np_utils.to_categorical(y_tr[target][rows_tr], 2)
-    model.fit(x_tr[rows_tr], y_train, batch_size=128, epochs=100, validation_split=1/10, verbose=1, callbacks=[es])
+    model.fit(x_tr[rows_tr], y_train, batch_size=128, epochs=100, validation_split=1/10, verbose=1, callbacks=[es, tb])
 
     p_te = model.predict_proba(x_te[rows_te])
     auc_te = roc_auc_score(y_te[target][rows_te], p_te[:, 1])

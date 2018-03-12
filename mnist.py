@@ -30,7 +30,7 @@ def evaluate_model(model, dataset, name, n_layers, hals):
     csv_logger = CSVLogger('output/%dx800/%s.csv' % (n_layers, name))
     es = EarlyStopping(monitor='val_loss', patience=5)
     #mcp = ModelCheckpoint('output/mnist_adaptative_%dx800/%s.checkpoint' % (n_layers, name), save_weights_only=True)
-    #tb = TensorBoard(log_dir='output/mnist_adaptative_%dx800' % n_layers, histogram_freq=1, write_graph=False, write_images=False)
+    tb = TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=False, write_images=False)
 
     sgd = SGD(lr=0.01, momentum=0.9, nesterov=True)
     model.compile(loss='categorical_crossentropy',
@@ -51,7 +51,7 @@ def evaluate_model(model, dataset, name, n_layers, hals):
                        (n_layers, l), tau_2, delimiter=",")
 
     history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
-                        verbose=1, validation_split=1 / 6, callbacks=[csv_logger, es])
+                        verbose=1, validation_split=1 / 6, callbacks=[csv_logger, es,tb])
     score = model.evaluate(X_test, Y_test, verbose=1)
 
     if dump_params:
@@ -111,7 +111,7 @@ def create_layer(name):
 
 
 def __main__(argv):
-    n_layers = int(argv[0])
+    n_layers = 5#int(argv[0])
     print(n_layers, 'layers')
 
     dataset = load_dataset()
