@@ -1,152 +1,77 @@
-
-'''Trains a simple deep NN on the MNIST dataset.
-Gets to 98.40% test accuracy after 20 epochs
-(there is *a lot* of margin for parameter tuning).
-2 seconds per epoch on a K520 GPU.
+'''Train a simple deep CNN on the CIFAR10 small images dataset.
+GPU run command with Theano backend (with TensorFlow, the GPU is automatically used):
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatx=float32 python cifar10_cnn.py
+It gets down to 0.65 test logloss in 25 epochs, and down to 0.55 after 50 epochs.
+(it's still underfitting at that point, though).
 '''
 
 from __future__ import print_function
-import sys
-import numpy as np
-np.random.seed(1337)  # for reproducibility
-
+import keras
+from keras.datasets import mnist
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import SGD
 from keras.utils import np_utils
-from keras.callbacks import CSVLogger, EarlyStopping
 from custom import AdaptativeBiHyperbolic
-from keras.layers import PReLU, ELU, LeakyReLU, ThresholdedReLU
+import numpy as np
+import os
 
 nb_classes = 10
 batch_size = 128
-nb_epoch = 100
-dump_params = False
+nb_epoch = 1000
 
+# the data, shuffled and split between train and test sets
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
 
-def evaluate_model(model, dataset, name, n_layers, hals):
-    X_train, Y_train, X_test, Y_test = dataset
-    csv_logger = CSVLogger('output/%dx800/%s.csv' % (n_layers, name))
-    es = EarlyStopping(monitor='val_loss', patience=5)
-    #mcp = ModelCheckpoint('output/mnist_adaptative_%dx800/%s.checkpoint' % (n_layers, name), save_weights_only=True)
-    tb = TensorBoard(log_dir='./logs', histogram_freq=1, write_graph=False, write_images=False)
+X_train = X_train.reshape(60000, 784)
+X_test = X_test.reshape(10000, 784)
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
+print(X_train.shape[0], 'train samples')
+print(X_test.shape[0], 'test samples')
 
-    sgd = SGD(lr=0.01, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=sgd, metrics=['accuracy'])
+# convert class vectors to binary class matrices
+y_train = np_utils.to_categorical(y_train, nb_classes)
+y_test = np_utils.to_categorical(y_test, nb_classes)
 
-    if dump_params:
-        for l in range(n_layers + 1):
-            HAL = hals[l].get_weights()
-            lmbda = HAL[0]
-            tau_1 = HAL[1]
-            tau_2 = HAL[2]
+# create model
+model = Sequential()
 
-            np.savetxt("output/%dx800/lambda_%d_start.csv" %
-                       (n_layers, l), lmbda, delimiter=",")
-            np.savetxt("output/%dx800/tau1_%d_start.csv" %
-                       (n_layers, l), tau_1, delimiter=",")
-            np.savetxt("output/%dx800/tau2_%d_start.csv" %
-                       (n_layers, l), tau_2, delimiter=",")
+model.add(Dense(800, input_shape=(784,)))
+model.add(AdaptativeBiHyperbolic())
+for l in range(5):
+    model.add(Dense(800))
+    model.add(AdaptativeBiHyperbolic())
+model.add(Dense(nb_classes))
+model.add(Activation('softmax'))
+model.summary()
 
-    history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
-                        verbose=1, validation_split=1 / 6, callbacks=[csv_logger, es,tb])
-    score = model.evaluate(X_test, Y_test, verbose=1)
+# initiate RMSprop optimizer
+#opt = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
 
-    if dump_params:
-        for l in range(n_layers + 1):
-            HAL = hals[l].get_weights()
-            lmbda = HAL[0]
-            tau_1 = HAL[1]
-            tau_2 = HAL[2]
+opt = SGD(lr=0.01, momentum=0.9, nesterov=True)
 
-            np.savetxt("output/%dx800/lambda_%d_stop.csv" %
-                       (n_layers, l), lmbda, delimiter=",")
-            np.savetxt("output/%dx800/tau1_%d_stop.csv" %
-                       (n_layers, l), tau_1, delimiter=",")
-            np.savetxt("output/%dx800/tau2_%d_stop.csv" %
-                       (n_layers, l), tau_2, delimiter=",")
+# Let's train the model using RMSprop
+model.compile(loss='categorical_crossentropy',
+              optimizer=opt,
+              metrics=['accuracy'])
 
-    epochs = len(history.epoch)
+X_train = X_train.astype('float32')
 
-    return score[0], score[1], epochs
+X_test = X_test.astype('float32')
+X_train /= 255
+X_test /= 255
 
+history = model.fit(X_train, y_train,
+              batch_size=batch_size,
+              epochs=nb_epoch,
+              verbose=1,
+              validation_split=1/6)
 
-def load_dataset():
-    # the data, shuffled and split between train and test sets
-    (X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-    X_train = X_train.reshape(60000, 784)
-    X_test = X_test.reshape(10000, 784)
-    X_train = X_train.astype('float32')
-    X_test = X_test.astype('float32')
-    X_train /= 255
-    X_test /= 255
-    print(X_train.shape[0], 'train samples')
-    print(X_test.shape[0], 'test samples')
-
-    # convert class vectors to binary class matrices
-    Y_train = np_utils.to_categorical(y_train, nb_classes)
-    Y_test = np_utils.to_categorical(y_test, nb_classes)
-
-    return X_train, Y_train, X_test, Y_test
-
-
-def create_layer(name):
-    if name == 'abh':
-        return AdaptativeBiHyperbolic()
-    elif name == 'prelu':
-        return PReLU()
-    elif name == 'lrelu':
-        return LeakyReLU()
-    elif name == 'trelu':
-        return ThresholdedReLU()
-    elif name == 'elu':
-        return ELU()
-    elif name == 'relu':
-        return Activation('relu')
-    elif name == 'tanh':
-        return Activation('tanh')
-
-
-def __main__(argv):
-    n_layers = 5#int(argv[0])
-    print(n_layers, 'layers')
-
-    dataset = load_dataset()
-
-    nonlinearities = ['abh', 'prelu', 'lrelu', 'trelu', 'elu', 'relu', 'tanh']
-
-    with open("output/%dx800/compare.csv" % n_layers, "a") as fp:
-        fp.write("fn,test_loss,test_acc,epochs\n")
-
-    hals = []
-
-    for name in nonlinearities:
-        model = Sequential()
-
-        model.add(Dense(800, input_shape=(784,)))
-        HAL = create_layer(name)
-        model.add(HAL)
-        hals.append(HAL)
-        for l in range(n_layers):
-            model.add(Dense(800))
-            HAL = create_layer(name)
-            model.add(HAL)
-            hals.append(HAL)
-        model.add(Dense(nb_classes))
-        model.add(Activation('softmax'))
-        model.summary()
-
-        loss, acc, epochs = evaluate_model(
-            model, dataset, name, n_layers, hals)
-
-        with open("output/%dx800/compare.csv" % n_layers, "a") as fp:
-            fp.write("%s,%f,%f,%d\n" % (name, loss, 100 * acc, epochs))
-
-        model = None
-
-
-if __name__ == "__main__":
-    __main__(sys.argv[1:])  # -*- coding: utf-8 -*-
+# Score trained model.
+scores = model.evaluate(x_test, y_test, verbose=1)
+print('Test loss:', scores[0])
+print('Test accuracy:', scores[1])  # -*- coding: utf-8 -*-
