@@ -16,6 +16,7 @@ from custom import AdaptativeBiHyperbolic
 from keras.layers import PReLU, ELU, LeakyReLU,ThresholdedReLU, Dropout
 from keras import regularizers
 
+# TODO: try-it on Rio.
 
 def create_activation_layer(name):
     if name == 'abh':
