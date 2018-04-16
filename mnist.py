@@ -8,12 +8,14 @@ It gets down to 0.65 test logloss in 25 epochs, and down to 0.55 after 50 epochs
 from __future__ import print_function
 import keras
 from keras.datasets import mnist
-from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import SGD
+from keras.callbacks import EarlyStopping
 from keras.utils import np_utils
-from custom import AdaptativeBiHyperbolic
+from BHAA import BHAA as AdaptativeBiHyperbolic
+
+#from custom import AdaptativeBiHyperbolic
 import numpy as np
 import os
 
@@ -51,7 +53,7 @@ model.summary()
 
 # initiate RMSprop optimizer
 #opt = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
-
+es = EarlyStopping(monitor='val_loss', patience=5)
 opt = SGD(lr=0.01, momentum=0.9, nesterov=True)
 
 # Let's train the model using RMSprop
@@ -69,9 +71,10 @@ history = model.fit(X_train, y_train,
               batch_size=batch_size,
               epochs=nb_epoch,
               verbose=1,
-              validation_split=1/6)
+              validation_split=1/6,
+              callbacks=[es])
 
 # Score trained model.
-scores = model.evaluate(x_test, y_test, verbose=1)
+scores = model.evaluate(X_test, y_test, verbose=1)
 print('Test loss:', scores[0])
 print('Test accuracy:', scores[1])  # -*- coding: utf-8 -*-
