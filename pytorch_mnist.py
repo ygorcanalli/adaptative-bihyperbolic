@@ -4,9 +4,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torch.nn.init as init
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 
+def bi_hyperbolic_fn(x, lmbda, tau_1, tau_2):
+    return torch.sqrt(1/16*(4 * lmbda * x + 1)**2 + tau_1**2) - torch.sqrt(1/16*(4 * lmbda * x - 1)**2 + tau_2**2)
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -60,16 +63,44 @@ class MLPNet(nn.Module):
         self.fc_h5 = nn.Linear(800, 800)
 
         self.fc_out = nn.Linear(800, 10)
+        
+        self.lambdas = torch.ones(6, 800)
+        self.taus_1 = torch.Tensor(6, 800)
+        init.xavier_normal(self.taus_1)
+        self.taus_2 = torch.Tensor(6, 800)
+        init.xavier_normal(self.taus_2)
+
+        self.lambdas = nn.Parameter(self.lambdas)
+        self.taus_1 = nn.Parameter(self.taus_1)
+        self.taus_2 = nn.Parameter(self.taus_2)
 
     def forward(self, x):
         x = x.view(-1, 28*28)
         
-        x = F.relu(self.fc_in(x))
-        x = F.relu(self.fc_h1(x))
-        x = F.relu(self.fc_h2(x))
-        x = F.relu(self.fc_h3(x))
-        x = F.relu(self.fc_h4(x))
-        x = F.relu(self.fc_h5(x))
+        x = bi_hyperbolic_fn(self.fc_in(x),
+                             self.lambdas[0],
+                             self.taus_1[0],
+                             self.taus_2[0])
+        x = bi_hyperbolic_fn(self.fc_h1(x),
+                             self.lambdas[1],
+                             self.taus_1[1],
+                             self.taus_2[1])
+        x = bi_hyperbolic_fn(self.fc_h2(x),
+                             self.lambdas[2],
+                             self.taus_1[2],
+                             self.taus_2[2])
+        x = bi_hyperbolic_fn(self.fc_h3(x),
+                             self.lambdas[3],
+                             self.taus_1[3],
+                             self.taus_2[3])
+        x = bi_hyperbolic_fn(self.fc_h4(x),
+                             self.lambdas[4],
+                             self.taus_1[4],
+                             self.taus_2[4])
+        x = bi_hyperbolic_fn(self.fc_h5(x),
+                             self.lambdas[5],
+                             self.taus_1[5],
+                             self.taus_2[5])
         x = F.relu(self.fc_out(x))
         return F.log_softmax(x, dim=1)
 
