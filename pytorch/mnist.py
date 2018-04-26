@@ -7,9 +7,8 @@ import torch.optim as optim
 import torch.nn.init as init
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+from custom import AdaptativeBiHyperbolicMLPNet
 
-def bi_hyperbolic_fn(x, lmbda, tau_1, tau_2):
-    return torch.sqrt(1/16*(4 * lmbda * x + 1)**2 + tau_1**2) - torch.sqrt(1/16*(4 * lmbda * x - 1)**2 + tau_2**2)
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -51,7 +50,7 @@ test_loader = torch.utils.data.DataLoader(
                    ])),
     batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-
+"""
 class MLPNet(nn.Module):
     def __init__(self):
         super(MLPNet, self).__init__()
@@ -103,8 +102,8 @@ class MLPNet(nn.Module):
                              self.taus_2[5])
         x = F.relu(self.fc_out(x))
         return F.log_softmax(x, dim=1)
-
-model = MLPNet()
+"""
+model = AdaptativeBiHyperbolicMLPNet(28*28, 10, [800,800,800,800,800])
 if args.cuda:
     model.cuda()
 
