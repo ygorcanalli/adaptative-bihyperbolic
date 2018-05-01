@@ -103,7 +103,7 @@ class MLPNet(nn.Module):
         x = F.relu(self.fc_out(x))
         return F.log_softmax(x, dim=1)
 """
-model = AdaptativeBiHyperbolicMLPNet(28*28, 10, [800,800,800,800,800])
+model = AdaptativeBiHyperbolicMLPNet(28*28, 10, [800,500,800,80,800])
 if args.cuda:
     model.cuda()
 
@@ -123,7 +123,7 @@ def train(epoch):
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.data[0]))
+                100. * batch_idx / len(train_loader), loss.item()))
 
 def test():
     model.eval()
@@ -132,7 +132,7 @@ def test():
     for data, target in test_loader:
         if args.cuda:
             data, target = data.cuda(), target.cuda()
-        data, target = Variable(data, volatile=True), Variable(target)
+        data, target = Variable(data, requires_grad=True), Variable(target)
         output = model(data)
         test_loss += F.nll_loss(output, target, size_average=False).data[0] # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability

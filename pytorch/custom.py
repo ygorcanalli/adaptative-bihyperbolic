@@ -11,8 +11,8 @@ def _unidimensional_xavier_normal(tensor, fan_in, fan_out, gain=1):
         return tensor.normal_(0, std)
 
 def _bi_hyperbolic(tensor, lmbda, tau_1, tau_2):
-    return (math.sqrt(1/16*(4 * lmbda * tensor + 1)**2 + tau_1**2) -
-            math.sqrt(1/16*(4 * lmbda * tensor - 1)**2 + tau_2**2))
+    return (torch.sqrt(1/16*(4 * lmbda * tensor + 1)**2 + tau_1**2) -
+            torch.sqrt(1/16*(4 * lmbda * tensor - 1)**2 + tau_2**2))
 
 class AdaptativeBiHyperbolicMLPNet(nn.Module):
     def __init__(self, in_size, out_size, hidden_sizes):
