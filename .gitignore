@@ -105,3 +105,4 @@ venv.bak/
 
 #tox21 dataset
 tox21/
+data/
