@@ -50,8 +50,8 @@ test_loader = torch.utils.data.DataLoader(
                    ])),
     batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-model = AdaptativeBiHyperbolicMLPNet(28*28, 10, [800,500,800,80,800])
-# model = MLPNet(28*28, 10, [800,500,800,80,800])
+# model = AdaptativeBiHyperbolicMLPNet(28*28, 10, [800,500,800,80,800])
+model = MLPNet(28*28, 10, [800,500,800,80,800])
 if args.cuda:
     model.cuda()
 
