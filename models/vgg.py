@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-
+from .custom import AdaptativeBiHyperbolicLayer
 
 cfg = {
     'VGG11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
@@ -37,6 +37,25 @@ class VGG(nn.Module):
                 in_channels = x
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
+
+class VGGBiHyperbolic(VGG):
+    def __init__(self, vgg_name):
+        super(VGGBiHyperbolic, self).__init__(vgg_name)
+
+    def _make_layers(self, cfg):
+        layers = []
+        in_channels = 3
+        for x in cfg:
+            if x == 'M':
+                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+            else:
+                layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
+                           nn.BatchNorm2d(x),
+                           AdaptativeBiHyperbolicLayer(in_channels, x)]
+                in_channels = x
+        layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        return nn.Sequential(*layers)
+
 
 # net = VGG('VGG11')
 # x = torch.randn(2,3,32,32)
