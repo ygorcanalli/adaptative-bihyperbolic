@@ -14,7 +14,6 @@ import os
 import argparse
 
 from models import *
-from custom import AdaptativeBiHyperbolicMLPNet, MLPNet
 from utils import progress_bar
 from torch.autograd import Variable
 
@@ -62,6 +61,7 @@ if args.resume:
 else:
     print('==> Building model..')
     # net = VGG('VGG19')
+    # net = VGGBiHyperbolic('VGG19')
     # net = ResNet18()
     # net = PreActResNet18()
     # net = GoogLeNet()
@@ -69,8 +69,8 @@ else:
     # net = ResNeXt29_2x64d()
     # net = MobileNet()
     # net = MobileNetV2()
-    net = AdaptativeBiHyperbolicMLPNet(3*32*32, 10, [800,500,800,80,800])
-    # net = MLPNet(3*32*32, 10, [800,500,800,80,800])
+    net = AdaptativeBiHyperbolicMLPNet(3*32*32, 10, [512,1024,1024,512])
+    # net = MLPNet(3*32*32, 10, [512,1024,1024,800])
     # net = DPN92()
     # net = ShuffleNetG2()
     # net = SENet18()
