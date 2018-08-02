@@ -7,18 +7,20 @@ import torch.nn.functional as F
 
 def _unidimensional_xavier_normal(tensor, fan_in, fan_out, gain=1):
     std = gain * math.sqrt(2.0 / (fan_in + fan_out))
-    with torch.autograd.no_grad():
-        return tensor.normal_(0, std)
+    return tensor.data.normal_(mean=0, std=std)
 
 def _bi_hyperbolic(tensor, lmbda, tau_1, tau_2, range='tanh'):
+    ones = torch.ones_like(tensor)
+    
     if range is 'sigmoid':
-        return torch.max(0,torch.min(0.5 * (
-            (torch.sqrt((2 * lmbda * tensor + 1)**2 + 4 * tau_1**2) - 
-            torch.sqrt((1 - 2 * lmbda * tensor)**2 + 4 * tau_2**2)) + 1),1))
+        zeros = torch.zeros_like(tensor)
+        fn_out = 0.5 * ((torch.sqrt((2 * lmbda * tensor + 1)**2 + 4 * tau_1**2) -
+            torch.sqrt((1 - 2 * lmbda * tensor)**2 + 4 * tau_2**2)) + 1)
+        return torch.min(ones, torch.max(zeros, fn_out))
     else:
-        return torch.max(-1,torch.min(
-            (torch.sqrt(1/16*(4 * lmbda * tensor + 1)**2 + tau_1**2) -
-            torch.sqrt(1/16*(4 * lmbda * tensor - 1)**2 + tau_2**2),1))
+        fn_out = (torch.sqrt(1/16*(4 * lmbda * tensor + 1)**2 + tau_1**2) -
+            torch.sqrt(1/16*(4 * lmbda * tensor - 1)**2 + tau_2**2))
+        return torch.min(ones, torch.max(-1 * ones, fn_out))
 
 class MLPNet(nn.Module):
     def __init__(self, in_size, out_size, hidden_sizes):
